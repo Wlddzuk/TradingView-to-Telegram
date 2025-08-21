@@ -1,0 +1,59 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/*.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/tv-webhook",
+      "dest": "/api/webhook"
+    },
+    {
+      "src": "/api/v1/tv-webhook", 
+      "dest": "/api/webhook"
+    },
+    {
+      "src": "/api/telegram-webhook",
+      "dest": "/api/telegram_webhook"
+    },
+    {
+      "src": "/healthz",
+      "dest": "/api/health"
+    },
+    {
+      "src": "/readyz",
+      "dest": "/api/health?check=ready"
+    },
+    {
+      "src": "/",
+      "dest": "/api/health?info=true"
+    }
+  ],
+  "functions": {
+    "api/*.py": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "PYTHONPATH": "./"
+  },
+  "envVarKeys": [
+    "TV_SHARED_SECRET",
+    "TELEGRAM_BOT_TOKEN", 
+    "TELEGRAM_CHAT_ID_DEFAULT",
+    "TELEGRAM_ADMIN_IDS",
+    "TZ_DISPLAY",
+    "DEFAULT_PAIRS",
+    "SUPPORTED_TIMEFRAMES",
+    "TELEGRAM_TF_CHAT_MAP",
+    "TELEGRAM_SYMBOL_CHAT_MAP",
+    "TELEGRAM_MAX_RETRIES",
+    "TELEGRAM_RETRY_DELAYS",
+    "IDEMPOTENCY_TTL_DAYS",
+    "KV_REST_API_URL",
+    "KV_REST_API_TOKEN"
+  ]
+}
