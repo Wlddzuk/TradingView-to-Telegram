@@ -2,7 +2,7 @@
 // EMA Bounce • VWAP + MACD • Multi-Symbol/TF Alerts + Host-Chart R:R Drawings
 // Create ONE TradingView alert with: Condition → "Any alert() function call", Options → "Once per bar close"
 
-indicator("EMABounce + VWAP + MACD • Multi-Asset Alerts (with Host R:R Drawings)", overlay=true, calc_on_every_tick=false, shorttitle="EMABnc v6 • Multi + Draw")
+indicator("EMABounce + VWAP + MACD • Multi-Asset Alerts (with Host R:R Drawings)", overlay=true, shorttitle="EMABnc v6 • Multi + Draw", calc_on_every_tick=false)
 
 // ───────── Inputs (same as your single-symbol script) ─────────
 fastLen     = input.int(9,   "EMA 9 (Fast)",    minval=1)
@@ -20,6 +20,14 @@ maxWait     = input.int(30,  "Max bars to wait for bounce (0 = unlimited)")
 rrMultiple    = input.float(3.0, "R:R Multiple (e.g., 3 for 3:1)", step=0.25)
 rrHorizonBars = input.int(40,    "R:R Guide Length (bars)", minval=5, maxval=500)
 showBoxes     = input.bool(true, "Shade Risk (1R) and Reward (R:R) Areas")
+
+// --- Minimal host plots to satisfy Pine indicator requirements ---
+hostEma9 = ta.ema(close, fastLen)
+hostVwap = ta.vwap(hlc3)
+plot(hostEma9, title="EMA 9 (host)", color=color.new(color.white, 70))
+plot(hostVwap, title="VWAP (host)", color=color.new(color.yellow, 70), style=plot.style_circles)
+// Optional: explicit alertcondition to avoid editor nudge
+alertcondition(false, title="EMA Bounce BUY (multi)", message="Use 'Any alert() function call'")
 
 // ───────── Universe (4 symbols × 4 timeframes) ─────────
 var string[] SYMS = array.from(
@@ -78,6 +86,8 @@ var box   rewBox  = na
 
 // For a small on-chart heads-up of the latest fired payload (any combo)
 var label latestLbl = na
+// Standardize host ticker id (handles exotic ids)
+hostId = ticker.standard(syminfo.tickerid)
 
 // ───────── Iterate all combos; alert all; draw when host symbol & TF match ─────────
 for i = 0 to array.size(SYMS) - 1
@@ -90,9 +100,16 @@ for i = 0 to array.size(SYMS) - 1
 
         if hit and not na(e) and not na(s) and not na(t)
             cleanSym = str.replace(sym, "BINANCE:", "")
-            payload = str.format(
-              "{{\"event\":\"EMA_BOUNCE_BUY\",\"symbol\":\"{0}\",\"timeframe\":\"{1}\",\"bar_time\":{2},\"entry\":{3},\"stop\":{4},\"target\":{5},\"rr\":{6},\"signal_id\":\"{7}_{8}_{9}\"}}",
-              cleanSym, tf, tstamp, e, s, t, rrMultiple, cleanSym, tf, str.tostring(tstamp))
+            payload =
+                "{\"event\":\"EMA_BOUNCE_BUY\"" +
+                ",\"symbol\":\""    + cleanSym + "\"" +
+                ",\"timeframe\":\"" + tf + "\"" +
+                ",\"bar_time\":"    + str.tostring(tstamp) +
+                ",\"entry\":"       + str.tostring(e) +
+                ",\"stop\":"        + str.tostring(s) +
+                ",\"target\":"      + str.tostring(t) +
+                ",\"rr\":"          + str.tostring(rrMultiple) +
+                ",\"signal_id\":\"" + cleanSym + "_" + tf + "_" + str.tostring(tstamp) + "\"}"
 
             // Emit JSON for your single TradingView alert (“Any alert() function call”)
             alert(payload, alert.freq_once_per_bar_close)
@@ -106,7 +123,7 @@ for i = 0 to array.size(SYMS) - 1
                     style=label.style_label_down, textcolor=color.white, color=color.new(color.blue, 0), size=size.small)
 
             // If this hit is for the HOST chart symbol & timeframe, draw 3:1 R:R lines/labels/boxes
-            if (sym == syminfo.tickerid) and (tf == timeframe.period)
+            if (ticker.standard(sym) == hostId) and (tf == timeframe.period)
                 risk = e - s
                 if risk > 0
                     // Clean previous set so chart stays tidy
