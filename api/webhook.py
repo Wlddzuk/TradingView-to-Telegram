@@ -60,7 +60,7 @@ class TradingViewPayload(BaseModel):
             raise ValueError("Target must be above entry price for long positions")
         return v
 
-def handler(request):
+def default(request):
     """Vercel serverless handler for TradingView webhook"""
     
     # Handle preflight OPTIONS request
