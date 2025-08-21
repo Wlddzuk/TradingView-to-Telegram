@@ -29,12 +29,9 @@ plot(hostVwap, title="VWAP (host)", color=color.new(color.yellow, 70), style=plo
 // Optional: explicit alertcondition to avoid editor nudge
 alertcondition(false, title="EMA Bounce BUY (multi)", message="Use 'Any alert() function call'")
 
-// ───────── Universe (4 symbols × 4 timeframes) ─────────
+// ───────── Universe (1 symbol × 4 timeframes) ─────────
 var string[] SYMS = array.from(
-    "BINANCE:BTCUSDT",
-    "BINANCE:ETHUSDT",
-    "BINANCE:ETHBTC",
-    "BINANCE:ADAUSDT"
+    "BINANCE:ETHUSDT"
 )
 var string[] TFS  = array.from("15", "60", "240", "D")  // 15m, 1h, 4h, 1D
 
@@ -157,16 +154,10 @@ if showStatus and barstate.islast
     var table status = na
     if not na(status)
         table.delete(status)
-    status := table.new(position.top_right, 2, 6, bgcolor=color.new(color.blue, 90), border_width=1)
+    status := table.new(position.top_right, 2, 3, bgcolor=color.new(color.blue, 90), border_width=1)
     table.cell(status, 0, 0, "🎯 MONITORING", text_color=color.white, bgcolor=color.blue)
     table.cell(status, 1, 0, "STATUS",        text_color=color.white, bgcolor=color.blue)
-    table.cell(status, 0, 1, "BTCUSDT", text_color=color.yellow)
+    table.cell(status, 0, 1, "ETHUSDT", text_color=color.yellow)
     table.cell(status, 1, 1, "15m•1h•4h•1D",  text_color=color.white)
-    table.cell(status, 0, 2, "ETHUSDT", text_color=color.yellow)
-    table.cell(status, 1, 2, "15m•1h•4h•1D",  text_color=color.white)
-    table.cell(status, 0, 3, "ETHBTC",  text_color=color.yellow)
-    table.cell(status, 1, 3, "15m•1h•4h•1D",  text_color=color.white)
-    table.cell(status, 0, 4, "ADAUSDT", text_color=color.yellow)
-    table.cell(status, 1, 4, "15m•1h•4h•1D",  text_color=color.white)
-    table.cell(status, 0, 5, "TOTAL",    text_color=color.orange)
-    table.cell(status, 1, 5, "16 combos", text_color=color.orange)
+    table.cell(status, 0, 2, "TOTAL",    text_color=color.orange)
+    table.cell(status, 1, 2, "4 combos", text_color=color.orange)

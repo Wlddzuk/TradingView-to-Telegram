@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     telegram_symbol_chat_map: str = Field(default="{}", description="JSON mapping symbols to chat IDs") 
     
     # Trading configuration
-    default_pairs: str = Field(default="BTCUSDT,ETHUSDT,ETHBTC,ADAUSDT", description="Default coin pairs")
+    default_pairs: str = Field(default="ETHUSDT", description="Default coin pairs")
     supported_timeframes: str = Field(default="5,15,60,240,D", description="Supported timeframes")
     
     # Display configuration
