@@ -1,28 +1,15 @@
 {
-  "functions": {
-    "api/webhook.py": {
-      "runtime": "@vercel/python"
-    },
-    "api/health.py": {
-      "runtime": "@vercel/python"  
+  "version": 2,
+  "builds": [
+    {
+      "src": "wsgi.py",
+      "use": "@vercel/python"
     }
-  },
+  ],
   "routes": [
     {
-      "src": "/api/tv-webhook",
-      "dest": "/api/webhook"
-    },
-    {
-      "src": "/healthz",
-      "dest": "/api/health"
-    },
-    {
-      "src": "/readyz", 
-      "dest": "/api/health"
-    },
-    {
-      "src": "/",
-      "dest": "/api/health"
+      "src": "/(.*)",
+      "dest": "wsgi.py"
     }
   ]
 }
