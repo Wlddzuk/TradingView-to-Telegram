@@ -1,11 +1,12 @@
-# Flask for simple webhook server
+# Flask for webhook server
 flask==2.3.3
+
+# Pydantic for configuration
 pydantic==2.5.0
 pydantic-settings==2.1.0
 
 # HTTP Client for Telegram
 aiohttp==3.9.1
-aiofiles==23.2.0
 
 # Database
 aiosqlite==0.19.0
@@ -13,19 +14,8 @@ aiosqlite==0.19.0
 # Timezone handling
 pytz==2023.3
 
-# Security
-python-multipart==0.0.6
-
 # Environment variables
 python-dotenv==1.0.0
 
 # JSON and data handling
 orjson==3.9.10
-
-# Logging
-structlog==23.2.0
-
-# Testing (optional)
-pytest==7.4.3
-pytest-asyncio==0.21.1
-httpx==0.25.2

@@ -18,11 +18,11 @@ class Settings(BaseSettings):
     )
     
     # TradingView webhook security
-    tv_shared_secret: str = Field(..., description="TradingView webhook shared secret")
+    tv_shared_secret: str = Field(default="", description="TradingView webhook shared secret")
     
     # Telegram configuration
-    telegram_bot_token: str = Field(..., description="Telegram bot token")
-    telegram_chat_id_default: str = Field(..., description="Default Telegram chat ID")
+    telegram_bot_token: str = Field(default="", description="Telegram bot token")
+    telegram_chat_id_default: str = Field(default="", description="Default Telegram chat ID")
     telegram_admin_ids: str = Field(default="", description="Comma-separated admin user IDs")
     
     # Optional chat routing
