@@ -1,0 +1,107 @@
+//@version=5
+// MULTI-SYMBOL/MULTI-TF ALERT AGGREGATOR (Indicator)
+// Uses ONE TradingView alert: Condition = "Any alert() function call", Once per bar close.
+// Monitors: BTCUSDT, ETHUSDT, ETHBTC across 15m, 1h, 4h, 1D timeframes
+
+indicator("EMA Bounce • VWAP + MACD • Multi-Symbol/TF Alerts", overlay=true, calc_on_every_tick=false)
+
+// ── Inputs (same defaults as your strategy)
+fastLen   = input.int(9,   "EMA 9 (Fast)",    minval=1)
+medLen    = input.int(20,  "EMA 20 (Medium)", minval=1)
+slowLen   = input.int(200, "EMA 200 (Slow)",  minval=1)
+macdFast  = input.int(12,  "MACD Fast")
+macdSlow  = input.int(26,  "MACD Slow")
+macdSig   = input.int(9,   "MACD Signal")
+tolPct    = input.float(0.05, "Bounce tolerance % below EMA-9", step=0.01)
+maxWait   = input.int(30,  "Max bars to wait for bounce (0 = unlimited)")
+rrMultiple = input.float(3.0, "R:R Multiple (3 = 3:1)", step=0.25)
+
+// ── Universe (3 symbols, 4 timeframes = 12 combinations)
+var string[] SYMS = array.from("BINANCE:BTCUSDT", "BINANCE:ETHUSDT", "BINANCE:ETHBTC")
+var string[] TFS  = array.from("15", "60", "240", "D")  // 15m, 1h, 4h, 1D
+
+// ── Signal logic packaged as a function that returns a tuple
+signalBlock(float tolPct, int maxWait, float rr) =>
+    // Compute series on the current security context
+    ema9   = ta.ema(close, fastLen)
+    ema20  = ta.ema(close, medLen)
+    ema200 = ta.ema(close, slowLen)
+    vwap   = ta.vwap(hlc3)
+    [macdLine, signalLine, _] = ta.macd(close, macdFast, macdSlow, macdSig)
+
+    bullStack  = ema9 > ema20 and ema20 > ema200
+    emaCrossUp = ta.crossover(ema9, ema20) and ema9 > ema200
+
+    tolPrice = ema9 * (1 + tolPct / 100.0)
+    bounce   = low <= tolPrice and close > ema9
+
+    priceAboveVWAP = close > vwap
+    macdBull       = macdLine > signalLine
+
+    // Per-symbol/TF state must be local to this block; emulate "wait for bounce" window per bar:
+    // We can't persist var state per symbol/TF across security calls reliably,
+    // so we approximate: require the cross to have happened within last maxWait bars and stack still valid.
+    // This maintains the spirit of your state machine without per-series persistent vars.
+    crossLookback = ta.barssince(emaCrossUp)
+    armed = (emaCrossUp or (crossLookback >= 0 and (maxWait == 0 or crossLookback <= maxWait))) and bullStack
+
+    longSignal = armed and bounce and priceAboveVWAP and macdBull and barstate.isconfirmed
+
+    entry  = na
+    stop   = na
+    target = na
+    if longSignal
+        entry := close
+        stop  := low
+        risk  = entry - stop
+        target := risk > 0 ? entry + rr * risk : na
+    [longSignal, entry, stop, target]
+
+// ── Iterate over all symbols/timeframes
+for i = 0 to array.size(SYMS) - 1
+    sym = array.get(SYMS, i)
+    for j = 0 to array.size(TFS) - 1
+        tf = array.get(TFS, j)
+
+        // Run the signal block in the symbol/TF context
+        [hit, e, s, t] = request.security(sym, tf, signalBlock(tolPct, maxWait, rrMultiple),
+            barmerge.gaps_off, barmerge.lookahead_off)
+
+        // Only act on confirmed bars of that TF
+        if hit and not na(e) and not na(s) and not na(t)
+            // Extract clean symbol name (remove BINANCE: prefix for payload)
+            cleanSym = str.replace(sym, "BINANCE:", "")
+            
+            // Build JSON payload
+            // timeframe in payload is the TF string ("15","60","240","D")
+            payload = str.format(
+              "{{\"event\":\"EMA_BOUNCE_BUY\",\"symbol\":\"{0}\",\"timeframe\":\"{1}\",\"bar_time\":{2},\"entry\":{3},\"stop\":{4},\"target\":{5},\"rr\":{6},\"signal_id\":\"{7}_{8}_{9}\"}}",
+              cleanSym, tf, time, e, s, t, rrMultiple, cleanSym, tf, str.tostring(time))
+
+            // Fire one alert per hit; use a single TradingView alert with condition "Any alert() function call"
+            alert(payload, alert.freq_once_per_bar_close)
+
+// Optional: Draw a small marker on chart when signals are detected
+var label signalLabel = na
+if barstate.islast
+    if not na(signalLabel)
+        label.delete(signalLabel)
+    signalLabel := label.new(bar_index, high, "📊 Multi-Symbol Scanner Active\n3 Symbols × 4 TFs = 12 Combinations", 
+                             style=label.style_label_down, color=color.blue, textcolor=color.white, size=size.small)
+
+// Display current monitoring status
+var table statusTable = na
+if barstate.islast
+    if not na(statusTable)
+        table.delete(statusTable)
+    statusTable := table.new(position.top_right, 2, 5, bgcolor=color.new(color.blue, 90), border_width=1)
+    table.cell(statusTable, 0, 0, "🎯 MONITORING", text_color=color.white, bgcolor=color.blue)
+    table.cell(statusTable, 1, 0, "STATUS", text_color=color.white, bgcolor=color.blue)
+    table.cell(statusTable, 0, 1, "BTCUSDT", text_color=color.yellow)
+    table.cell(statusTable, 1, 1, "15m•1h•4h•1D", text_color=color.white)
+    table.cell(statusTable, 0, 2, "ETHUSDT", text_color=color.yellow)
+    table.cell(statusTable, 1, 2, "15m•1h•4h•1D", text_color=color.white)
+    table.cell(statusTable, 0, 3, "ETHBTC", text_color=color.yellow)
+    table.cell(statusTable, 1, 3, "15m•1h•4h•1D", text_color=color.white)
+    table.cell(statusTable, 0, 4, "TOTAL", text_color=color.orange)
+    table.cell(statusTable, 1, 4, "12 Combinations", text_color=color.orange)
