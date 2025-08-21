@@ -10,7 +10,7 @@ from lib.config import settings
 from lib.database import test_database_connection, get_enabled_pairs
 from lib.telegram_bot import test_telegram_connection
 
-def default(request):
+def handler(request):
     """Vercel serverless handler for health checks"""
     
     # Handle preflight OPTIONS request

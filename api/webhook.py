@@ -60,7 +60,7 @@ class TradingViewPayload(BaseModel):
             raise ValueError("Target must be above entry price for long positions")
         return v
 
-def default(request):
+def handler(request):
     """Vercel serverless handler for TradingView webhook"""
     
     # Handle preflight OPTIONS request
@@ -100,11 +100,18 @@ def default(request):
         
         # Parse request body
         try:
-            if hasattr(request, 'json') and request.json:
-                body_data = request.json
-            else:
+            # Get body from Vercel request
+            if hasattr(request, 'get_json'):
+                body_data = request.get_json()
+            elif hasattr(request, 'json'):
+                body_data = request.json if callable(request.json) else request.json
+            elif hasattr(request, 'data'):
+                body_data = json.loads(request.data)
+            elif hasattr(request, 'body'):
                 body_data = json.loads(request.body)
-        except (json.JSONDecodeError, AttributeError):
+            else:
+                body_data = json.loads(request)
+        except (json.JSONDecodeError, AttributeError, TypeError):
             return {
                 "statusCode": 400,
                 "body": json.dumps({"error": "Invalid JSON payload"})

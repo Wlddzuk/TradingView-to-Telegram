@@ -1,38 +1,28 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/*.py",
-      "use": "@vercel/python"
+  "functions": {
+    "api/webhook.py": {
+      "runtime": "@vercel/python"
+    },
+    "api/health.py": {
+      "runtime": "@vercel/python"  
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/tv-webhook",
       "dest": "/api/webhook"
     },
     {
-      "src": "/api/v1/tv-webhook", 
-      "dest": "/api/webhook"
-    },
-    {
-      "src": "/api/telegram-webhook",
-      "dest": "/api/telegram_webhook"
-    },
-    {
       "src": "/healthz",
       "dest": "/api/health"
     },
     {
-      "src": "/readyz",
-      "dest": "/api/health?check=ready"
+      "src": "/readyz", 
+      "dest": "/api/health"
     },
     {
       "src": "/",
-      "dest": "/api/health?info=true"
+      "dest": "/api/health"
     }
-  ],
-  "env": {
-    "PYTHONPATH": "./"
-  }
+  ]
 }
