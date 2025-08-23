@@ -1,8 +1,9 @@
 //@version=6
 // EMA Bounce • VWAP + MACD • Multi-Symbol/TF Alerts + Host-Chart R:R Drawings
+// 🎯 USES EXACT STATE MACHINE LOGIC from ema_bounce_vwap_macd_strategy.pine (the $4,787 ETHUSD signal generator)
 // Create ONE TradingView alert with: Condition → "Any alert() function call", Options → "Once per bar close"
 
-indicator("EMABounce + VWAP + MACD • Multi-Asset Alerts (with Host R:R Drawings)", overlay=true, shorttitle="EMABnc v6 • Multi + Draw", calc_on_every_tick=false)
+indicator("EMABounce + VWAP + MACD • Multi-Asset Alerts (EXACT Strategy Logic)", overlay=true, shorttitle="EMABnc v6 • Exact Logic", calc_on_every_tick=false)
 
 // ───────── Inputs (same as your single-symbol script) ─────────
 fastLen     = input.int(9,   "EMA 9 (Fast)",    minval=1)
@@ -36,7 +37,7 @@ var string[] SYMS = array.from(
 var string[] TFS  = array.from("15", "60", "240", "D")  // 15m, 1h, 4h, 1D
 
 // ───────── Signal block (runs inside each security context) ─────────
-// Mirrors your logic; window approximated via barssince(cross) ≤ maxWait while bull stack holds.
+// EXACT STATE MACHINE LOGIC from working strategy (ema_bounce_vwap_macd_strategy.pine)
 // Returns: [hit(bool), entry(float), stop(float), target(float), barTime(int)]
 signalBlock(float tolP, int mWait, float rr) =>
     ema9   = ta.ema(close, fastLen)
@@ -54,11 +55,29 @@ signalBlock(float tolP, int mWait, float rr) =>
     priceAboveVWAP = close > vwap
     macdBull       = macdLine > signalLine
 
-    cb    = ta.barssince(emaCrossUp)             // -1 if never
-    soon  = (cb == 0) or (cb >= 0 and (mWait == 0 or cb <= mWait))
-    armed = soon and bullStack
+    // ═══ CRITICAL: Use EXACT state machine from working strategy ═══
+    var bool waitBounce = false
+    var int  barsWaited = na
 
-    hit = armed and bounce and priceAboveVWAP and macdBull and barstate.isconfirmed
+    if emaCrossUp
+        waitBounce := true
+        barsWaited := 0
+    else if waitBounce
+        barsWaited += 1
+
+    // Abort waiting if stack breaks or timeout reached (exactly like working strategy)
+    if not bullStack or (mWait > 0 and barsWaited > mWait)
+        waitBounce := false
+        barsWaited := na
+
+    // Signal generation (exactly like working strategy)
+    longSignal = waitBounce and bounce and priceAboveVWAP and macdBull
+
+    if longSignal
+        waitBounce := false
+        barsWaited := na
+
+    hit = longSignal and barstate.isconfirmed
 
     entry  = na
     stop   = na
