@@ -4,9 +4,17 @@
     {
       "src": "wsgi.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "api/email_check.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
+    {
+      "src": "/api/email_check",
+      "dest": "api/email_check.py"
+    },
     {
       "src": "/(.*)",
       "dest": "wsgi.py"
