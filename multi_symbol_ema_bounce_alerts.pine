@@ -3,7 +3,7 @@
 // 🎯 USES EXACT STATE MACHINE LOGIC from ema_bounce_vwap_macd_strategy.pine (the $4,787 ETHUSD signal generator)
 // Create ONE TradingView alert with: Condition → "Any alert() function call", Options → "Once per bar close"
 
-indicator("EMABounce + VWAP + MACD • Multi-Asset Alerts (EXACT Strategy Logic)", overlay=true, shorttitle="EMABnc v6 • Exact Logic", calc_on_every_tick=false)
+indicator("EMABounce + VWAP + MACD • Multi-Asset Alerts (EXACT Strategy Logic)", overlay=true, shorttitle="EMABnc v6 • Exact Logic")
 
 // ───────── Inputs (same as your single-symbol script) ─────────
 fastLen     = input.int(9,   "EMA 9 (Fast)",    minval=1)
