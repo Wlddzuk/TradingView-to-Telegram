@@ -185,9 +185,15 @@ class EmailProcessor:
     def _parse_signal_content(self, body: str) -> Optional[Dict[str, Any]]:
         """Parse structured signal data from email body"""
         try:
+            # Clean the body - remove line breaks and extra whitespace from signal data
+            cleaned_body = re.sub(r'\r\n\s*', '', body)  # Remove \r\n and following whitespace
+            cleaned_body = re.sub(r'\n\s*', '', cleaned_body)  # Remove \n and following whitespace
+            print(f"DEBUG: Cleaned body: {cleaned_body[:300]}...")
+            
             # Look for signal pattern: action:ENTRY|symbol:...|tf:...|...
-            signal_pattern = r'action:ENTRY\|([^|\n]+)'
-            match = re.search(signal_pattern, body)
+            # Updated pattern to be more flexible
+            signal_pattern = r'action:ENTRY\|.*?secret:[^|\s]+'
+            match = re.search(signal_pattern, cleaned_body)
             
             if not match:
                 # Try broader pattern matching
@@ -197,7 +203,7 @@ class EmailProcessor:
                 return None
             
             # Extract the signal line
-            signal_line = "action:ENTRY|" + match.group(1)
+            signal_line = match.group(0)
             print(f"DEBUG: Extracted signal line: {signal_line}")
             
             # Parse pipe-delimited data
