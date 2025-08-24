@@ -13,7 +13,6 @@ from lib.config import settings
 from lib.database import save_signal, get_enabled_pairs
 from lib.telegram_bot import send_signal_message
 from lib.validators import validate_tradingview_payload
-from api.email_check import email_check_handler
 
 app = Flask(__name__)
 
@@ -109,8 +108,13 @@ def webhook():
 
 @app.route('/api/email_check', methods=['GET', 'POST'])
 def email_check():
-    """Email checking endpoint for TradingView alerts via Gmail IMAP"""
-    return email_check_handler()
+    """Email checking endpoint for TradingView alerts via Gmail IMAP - redirects to serverless function"""
+    return jsonify({
+        "status": "redirect",
+        "message": "Email checking is handled by serverless function at /api/email_check",
+        "note": "This Flask endpoint is for legacy webhook support. Use the serverless API directly.",
+        "timestamp": datetime.utcnow().isoformat()
+    })
 
 @app.route('/api/health', methods=['GET'])
 @app.route('/healthz', methods=['GET'])
