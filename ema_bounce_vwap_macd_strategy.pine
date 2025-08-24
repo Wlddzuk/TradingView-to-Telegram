@@ -123,23 +123,3 @@ plot(signalLine, title="Signal", color=color.orange, linewidth=1)
 plotshape(longSignal, title="Long Signal",
           style=shape.labelup, location=location.belowbar,
           color=color.green, text="BUY", size=size.tiny)
-
-// ───────── Alerts ─────────
-var string srcSym = syminfo.ticker
-var string srcTF  = timeframe.period
-signal_id = str.format("{0}_{1}_{2}", srcSym, srcTF, str.tostring(time))
-
-var float a_entry = na, a_stop = na, a_target = na
-if longSignal
-    a_entry := close
-    a_stop  := low
-    risk    = a_entry - a_stop
-    a_target := risk > 0 ? a_entry + rrMultiple * risk : na
-
-alertcondition(longSignal, title="EMA Bounce Buy", message="BUY")
-
-if longSignal
-    payload = str.format(
-      "{{\"event\":\"EMA_BOUNCE_BUY\",\"symbol\":\"{0}\",\"timeframe\":\"{1}\",\"bar_time\":{2},\"entry\":{3},\"stop\":{4},\"target\":{5},\"rr\":{6},\"signal_id\":\"{7}\"}}",
-      srcSym, srcTF, time, a_entry, a_stop, a_target, rrMultiple, signal_id)
-    alert(payload, alert.freq_once_per_bar_close)

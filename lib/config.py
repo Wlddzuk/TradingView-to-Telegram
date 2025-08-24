@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     # Display configuration
     tz_display: str = Field(default="Europe/London", description="Display timezone")
     
+    # Gmail IMAP configuration for email-based alerts
+    gmail_email: str = Field(default="", description="Gmail address for TradingView alerts")
+    gmail_app_password: str = Field(default="", description="Gmail app password for IMAP access")
+    gmail_folder_name: str = Field(default="TradingView", description="Gmail folder/label name for TradingView alerts")
+    
     # Vercel KV configuration
     kv_rest_api_url: Optional[str] = Field(default=None, description="Vercel KV REST API URL")
     kv_rest_api_token: Optional[str] = Field(default=None, description="Vercel KV REST API Token")

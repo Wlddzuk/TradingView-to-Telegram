@@ -1,7 +1,8 @@
 //@version=6
-// EMA Bounce • VWAP + MACD • Multi-Symbol/TF Alerts + Host-Chart R:R Drawings
+// EMA Bounce • VWAP + MACD • Email-Based Multi-Symbol/TF Alerts + Host-Chart R:R Drawings
 // 🎯 USES EXACT STATE MACHINE LOGIC from ema_bounce_vwap_macd_strategy.pine (the $4,787 ETHUSD signal generator)
-// Create ONE TradingView alert with: Condition → "Any alert() function call", Options → "Once per bar close"
+// 📧 WORKS WITH TRADINGVIEW FREE: Email alerts → IMAP → Vercel → Telegram
+// Create ONE TradingView alert with: Condition → "Any alert() function call", Options → "Once per bar close", Notifications → "Send email"
 
 indicator("EMABounce + VWAP + MACD • Multi-Asset Alerts (EXACT Strategy Logic)", overlay=true, shorttitle="EMABnc v6 • Exact Logic")
 
@@ -27,8 +28,8 @@ hostEma9 = ta.ema(close, fastLen)
 hostVwap = ta.vwap(hlc3)
 plot(hostEma9, title="EMA 9 (host)", color=color.new(color.white, 70))
 plot(hostVwap, title="VWAP (host)", color=color.new(color.yellow, 70), style=plot.style_circles)
-// Optional: explicit alertcondition to avoid editor nudge
-alertcondition(false, title="EMA Bounce BUY (multi)", message="Use 'Any alert() function call'")
+// Optional: explicit alertcondition to avoid editor nudge  
+alertcondition(false, title="EMA Bounce BUY (email)", message="Use 'Any alert() function call' + Enable 'Send email'")
 
 // ───────── Universe (1 symbol × 4 timeframes) ─────────
 var string[] SYMS = array.from(
@@ -116,19 +117,22 @@ for i = 0 to array.size(SYMS) - 1
 
         if hit and not na(e) and not na(s) and not na(t)
             cleanSym = str.replace(sym, "BINANCE:", "")
-            payload =
-                "{\"event\":\"EMA_BOUNCE_BUY\"" +
-                ",\"symbol\":\""    + cleanSym + "\"" +
-                ",\"timeframe\":\"" + tf + "\"" +
-                ",\"bar_time\":"    + str.tostring(tstamp) +
-                ",\"entry\":"       + str.tostring(e) +
-                ",\"stop\":"        + str.tostring(s) +
-                ",\"target\":"      + str.tostring(t) +
-                ",\"rr\":"          + str.tostring(rrMultiple) +
-                ",\"signal_id\":\"" + cleanSym + "_" + tf + "_" + str.tostring(tstamp) + "\"}"
+            
+            // Create structured email message for IMAP parsing
+            emailPayload = 
+                "action:ENTRY" +
+                "|symbol:" + cleanSym +
+                "|tf:" + tf +
+                "|bar_time:" + str.tostring(tstamp) +
+                "|entry:" + str.tostring(e) +
+                "|stop:" + str.tostring(s) +
+                "|target:" + str.tostring(t) +
+                "|rr:" + str.tostring(rrMultiple) +
+                "|signal_id:" + cleanSym + "_" + tf + "_" + str.tostring(tstamp) +
+                "|secret:walid-ema-bounce-2025"
 
-            // Emit JSON for your single TradingView alert (“Any alert() function call”)
-            alert(payload, alert.freq_once_per_bar_close)
+            // Send structured message via TradingView email alert
+            alert(emailPayload, alert.freq_once_per_bar_close)
 
             // Update a small floating label with the latest signal info (host chart display only)
             if barstate.islast
