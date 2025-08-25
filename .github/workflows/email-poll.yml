@@ -1,0 +1,61 @@
+name: TradingView Email Signal Polling
+
+on:
+  schedule:
+    # Run every minute (GitHub Actions minimum)
+    # Note: * * * * * means every minute
+    - cron: '* * * * *'
+  
+  # Allow manual triggering for testing
+  workflow_dispatch:
+
+jobs:
+  poll-emails:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Poll Email Endpoint
+        run: |
+          echo "🔄 Polling TradingView email endpoint..."
+          
+          # Call the email processing endpoint
+          response=$(curl -s -w "\n%{http_code}" \
+            "https://walid3rbot-git-main-walids-projects-fd231c7c.vercel.app/api/email_check")
+          
+          # Extract HTTP status code (last line)
+          http_code=$(echo "$response" | tail -n1)
+          # Extract response body (all but last line)  
+          body=$(echo "$response" | head -n -1)
+          
+          echo "📡 HTTP Status: $http_code"
+          echo "📄 Response: $body"
+          
+          # Parse response for signal processing info
+          if echo "$body" | grep -q '"signals_processed":'; then
+            signals_count=$(echo "$body" | grep -o '"signals_processed":[0-9]*' | grep -o '[0-9]*')
+            successful_count=$(echo "$body" | grep -o '"successful":[0-9]*' | grep -o '[0-9]*')
+            echo "✅ Signals processed: $signals_count (successful: $successful_count)"
+          fi
+          
+          # Check for errors
+          if echo "$body" | grep -q '"status":"error"'; then
+            echo "❌ Error detected in response"
+            echo "$body"
+            exit 1
+          fi
+          
+          # Check HTTP status
+          if [ "$http_code" -ne 200 ]; then
+            echo "❌ HTTP error: $http_code"
+            exit 1
+          fi
+          
+          echo "✅ Email polling completed successfully"
+          
+      - name: Log Polling Stats
+        run: |
+          echo "📊 Polling Statistics:"
+          echo "⏰ Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "🔗 Endpoint: https://walid3rbot-git-main-walids-projects-fd231c7c.vercel.app/api/email_check"
+          echo "⚡ Polling Frequency: Every 60 seconds"
+          echo "🤖 Runner: GitHub Actions (ubuntu-latest)"

@@ -1,0 +1,68 @@
+name: System Health Check
+
+on:
+  schedule:
+    # Run every 5 minutes for health monitoring
+    - cron: '*/5 * * * *'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check Main App Health
+        run: |
+          echo "🏥 Checking main application health..."
+          
+          response=$(curl -s -w "\n%{http_code}" \
+            "https://walid3rbot-git-main-walids-projects-fd231c7c.vercel.app/")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n -1)
+          
+          echo "📡 Main App HTTP Status: $http_code"
+          
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Main application is healthy"
+          else
+            echo "❌ Main application health check failed"
+            echo "$body"
+            exit 1
+          fi
+          
+      - name: Check Email Endpoint Health  
+        run: |
+          echo "📧 Checking email processing endpoint..."
+          
+          response=$(curl -s -w "\n%{http_code}" \
+            "https://walid3rbot-git-main-walids-projects-fd231c7c.vercel.app/api/email_check")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | head -n -1)
+          
+          echo "📡 Email Endpoint HTTP Status: $http_code"
+          
+          if [ "$http_code" -eq 200 ]; then
+            if echo "$body" | grep -q '"status":"ok"'; then
+              echo "✅ Email processing endpoint is healthy"
+            else
+              echo "⚠️ Email endpoint responded but may have issues"
+              echo "$body"
+            fi
+          else
+            echo "❌ Email endpoint health check failed"  
+            echo "$body"
+            exit 1
+          fi
+          
+      - name: Environment Check
+        run: |
+          echo "🔧 Environment Information:"
+          echo "📅 UTC Time: $(date -u '+%Y-%m-%d %H:%M:%S')"
+          echo "🌍 Runner Location: GitHub Actions"
+          echo "🖥️ OS: $(uname -s)"
+          echo "💾 Available Memory: $(free -h | grep '^Mem:' | awk '{print $7}' || echo 'N/A')"
+          echo "⚡ Network Test: $(ping -c 1 google.com > /dev/null && echo 'OK' || echo 'FAILED')"
